@@ -3,38 +3,41 @@ import torch
 from f5_tts.api import F5TTS
 
 def main():
-    # এনভায়রনমেন্ট ভেরিয়েবল থেকে টেক্সট সংগ্রহ
-    target_text = os.getenv("TARGET_TEXT", "বাংলা ভয়েস জেনারেট হচ্ছে।")
+    # voice_text.txt ফাইল থেকে টার্গেট টেক্সট পড়া
+    text_file_path = "voice_text.txt"
     
-    # ইনপুট এবং আউটপুট পাথ
+    if os.path.exists(text_file_path):
+        with open(text_file_path, "r", encoding="utf-8") as f:
+            target_text = f.read().strip()
+    else:
+        target_text = "ডিফল্ট বাংলা ভয়েস জেনারেট হচ্ছে।"
+    
+    # রেফারেন্স অডিও এবং আউটপুট পাথ
     ref_audio_path = "ref_audio/sample.wav"
     output_dir = "output"
-    os.makedirs(output_dir, SDK=True) if hasattr(os, 'SDK') else os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, "output_voice.wav")
     
-    print(f"[*] লক্ষ্য টেক্সট: {target_text}")
+    print(f"[*] টেক্সট ফাইল থেকে পড়া হয়েছে: {target_text}")
     print(f"[*] রেফারেন্স অডিও: {ref_audio_path}")
     
-    # ডিভাইস নির্ধারণ (GitHub Actions CPU রানারের জন্য)
     device = "cpu"
     print(f"[*] ব্যবহৃত ডিভাইস: {device}")
 
     try:
-        # F5-TTS মডেল ইনিশিয়ালাইজ করা (ডিফল্ট চেকপয়েন্ট ব্যবহার করে)
         print("[*] মডেল লোড হচ্ছে...")
         f5tts = F5TTS(device=device)
 
-        # রেফারেন্স অডিওর সাথে মিল রেখে ভয়েস জেনারেট করা
-        # (নোট: ref_text এ আপনার রেফারেন্স অডিওতে ঠিক যা বলা হয়েছে তা দিতে হবে, 
-        # অথবা খালি রাখলে মডেল অটো-ডিটেক্ট বা বেসিক জেনারেশন করবে)
+        # রেফারেন্স স্ক্রিপ্ট (আপনার রেকর্ড করা অডিওতে যা বলেছিলেন)
+        ref_script = """গতকাল রাতে দারুণ একটা থ্রিলার মুভি দেখলাম! এর ব্যাকগ্রাউন্ড মিউজিক এবং শেষ ১৫ মিনিটের টুইস্ট—এককথায় দুর্দান্ত ছিল। যারা সাসপেন্স পছন্দ করেন, তাদের এই সিনেমাটি অবশ্যই দেখা উচিত।"""
+
         print("[*] ভয়েস জেনারেশন শুরু হয়েছে...")
-        
         f5tts.infer(
             ref_file=ref_audio_path,
-            ref_text = """গতকাল রাতে দারুণ একটা থ্রিলার মুভি দেখলাম! এর ব্যাকগ্রাউন্ড মিউজিক এবং শেষ ১৫ মিনিটের টুইস্ট—এককথায় দুর্দান্ত ছিল। যারা সাসপেন্স পছন্দ করেন, তাদের এই সিনেমাটি অবশ্যই দেখা উচিত।"""
+            ref_text=ref_script,
             gen_text=target_text,
             file_wave_output=output_path,
-            nfe_step=32,   # CPU-তে স্পিড অপ্টিমাইজ করতে স্টেপ কমিয়ে রাখা যেতে পারে (ডিফল্ট ৩২ বা ১৬)
+            nfe_step=32,
             sway_sampling_coef=-1.0
         )
         

@@ -1,5 +1,9 @@
 import os
 import torch
+
+# torchcodec-এর জিপিইউ নির্ভরতা এবং এরর এড়াতে এই এনভায়রনমেন্ট ভেরিয়েবল সেট করা বাধ্যতামূলক
+os.environ["TORCHAUDIO_USE_TORCHCODEC"] = "0"
+
 import torchaudio
 from f5_tts.api import F5TTS
 

@@ -36,4 +36,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: generated-voice-output
-          path: output/*.wav
+          path: output/

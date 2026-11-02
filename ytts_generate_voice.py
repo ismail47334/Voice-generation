@@ -18,7 +18,7 @@ def main():
         with open(text_file_path, "r", encoding="utf-8") as f:
             target_text = f.read().strip()
     else:
-        target_text = "YourTTS দিয়ে উচ্চমানের বাংলা ভয়েস জেনারেট হচ্ছে।"
+        target_text = "বাংলা ভয়েস জেনারেট হচ্ছে।"
     
     raw_ref_audio = "ref_audio/sample.wav"
     clean_ref_audio = "ref_audio/clean_sample.wav"
@@ -33,11 +33,16 @@ def main():
     else:
         clean_ref_audio = raw_ref_audio
 
-    print("[*] YourTTS মডেল লোড হচ্ছে (CPU মোড)...")
-    # YourTTS মাল্টিলিঙ্গুয়াল মডেল লোড
-    tts = TTS(model_name="tts_models/multilingual/multi-dataset/yourtts", progress_bar=False, gpu=False)
+    print("[*] TTS মডেল লোড হচ্ছে (CPU মোড)...")
+    
+    # আপনার রিকোয়ারমেন্ট অনুযায়ী নিরাপদ মাল্টিলিঙ্গুয়াল মডেল (VITS)
+    model_name = "tts_models/multilingual/multi-dataset/vits"
+    
+    tts = TTS(model_name=model_name, progress_bar=False, gpu=False)
 
     print("[*] ভয়েস ক্লোনিং ও অডিও জেনারেশন শুরু হয়েছে...")
+    
+    # জিরো-শট ক্লোনিংয়ের জন্য speaker_wav ব্যবহার করা
     tts.tts_to_file(
         text=target_text,
         speaker_wav=clean_ref_audio,

@@ -1,4 +1,4 @@
-name: IndicF5 Bengali Voice Generation
+name: IndicF5 Bengali Voice - FIXED for Gated
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python 3.10 (Recommended for IndicF5)
+      - name: Setup Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -26,26 +26,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg libsndfile1
 
-      - name: Install Python deps for IndicF5
+      - name: Install Python deps
         run: |
           pip install --upgrade pip
           pip install --no-cache-dir -r requirements.txt
 
-      - name: Verify IndicF5 installation
+      - name: Verify files
         run: |
-          python -c "from transformers import AutoModel; print('Transformers OK')"
-          python -c "import torch; print(f'Torch: {torch.__version__}')"
           ls -lh ref_audio/
-          echo "--- ref_text.txt ---"
           cat ref_text.txt
-          echo "--- voice_text.txt ---"
-          cat voice_text.txt
+          echo "---"
+          cat voice_text.txt | head -c 200
 
-      - name: Generate Bengali voice with IndicF5
+      - name: Generate Bengali voice with IndicF5 (with HF_TOKEN)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HUGGINGFACE_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           python scripts/indicf5_generate.py
 
-      - name: Upload Bangla voice artifact
+      - name: Upload Bangla voice
         uses: actions/upload-artifact@v4
         with:
           name: bangla-voice-indicf5

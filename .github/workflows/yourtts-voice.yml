@@ -1,0 +1,38 @@
+name: Generate Voice with YourTTS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-audio:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies (FFmpeg)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install TTS soundfile
+
+      - name: Run Voice Generation Script
+        run: |
+          python ytts_generate_voice.py
+
+      - name: Upload Generated Audio Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-voice-output
+          path: output/

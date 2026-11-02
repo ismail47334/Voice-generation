@@ -34,7 +34,7 @@ def main():
         text=target_text,
         file_path=output_path,
         speaker_wav=ref_audio_path,
-        language="bn"  # বাংলা ভাষার জন্য 'bn'
+        language="en"  # বাংলা ভাষার জন্য 'bn'
     )
     
     print(f"[✔] সফলভাবে অডিও জেনারেট হয়েছে: {output_path}")

@@ -1,4 +1,4 @@
-name: F5-TTS Voice Generation
+name: F5-TTS Voice Generation - FIXED
 
 on:
   workflow_dispatch:
@@ -26,19 +26,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg libsndfile1
 
-      - name: Install Python deps - FIXED
+      - name: Install Python deps
         run: |
           pip install --upgrade pip
-          # Install without cache to avoid old numpy
           pip install --no-cache-dir -r requirements.txt
 
-      - name: Verify versions
+      - name: Verify
         run: |
           python -c "import numpy; print(f'NumPy: {numpy.__version__}')"
           python -c "import torch; print(f'Torch: {torch.__version__}')"
-          python -c "import f5_tts; print('F5-TTS OK')"
+          python -c "from f5_tts.api import F5TTS; print('F5TTS import OK')"
           ls -lh ref_audio/
-          wc -m voice_text.txt ref_text.txt
+          cat voice_text.txt
 
       - name: Generate voice
         run: |
@@ -47,6 +46,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: generated-voice
+          name: generated-voice-f5tts
           path: output/
           retention-days: 7

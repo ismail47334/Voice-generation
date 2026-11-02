@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+
+# Models cache (GitHub Actions will cache)
+*.bin
+*.pt
+
+# Large output (keep wav/mp3 out of git, only in artifacts)
+output/*.wav
+output/*.mp3
+!output/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db

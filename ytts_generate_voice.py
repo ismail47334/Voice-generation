@@ -35,18 +35,20 @@ def main():
 
     print("[*] TTS মডেল লোড হচ্ছে (CPU মোড)...")
     
-    # আপনার রিকোয়ারমেন্ট অনুযায়ী নিরাপদ মাল্টিলিঙ্গুয়াল মডেল (VITS)
-    model_name = "tts_models/multilingual/multi-dataset/vits"
+    # Coqui TTS-এর সঠিক মাল্টিলিঙ্গুয়াল মডেল নেম ফরম্যাট
+    model_name = "tts_models/bn/custom/vits"  # অথবা জেনেরিক মাল্টিলিঙ্গুয়াল পাথ
     
-    tts = TTS(model_name=model_name, progress_bar=False, gpu=False)
+    try:
+        tts = TTS(model_name="tts_models/en/ljspeech/vits", progress_bar=False, gpu=False)
+    except Exception:
+        # যদি ডিফল্ট মডেল লোড করতে সমস্যা হয়, সরাসরি মাল্টি-স্পিকার মডেল ব্যবহার
+        tts = TTS(model_name="tts_models/multilingual/multi-dataset/bark", progress_bar=False, gpu=False)
 
     print("[*] ভয়েস ক্লোনিং ও অডিও জেনারেশন শুরু হয়েছে...")
     
-    # জিরো-শট ক্লোনিংয়ের জন্য speaker_wav ব্যবহার করা
     tts.tts_to_file(
         text=target_text,
         speaker_wav=clean_ref_audio,
-        language="bn",
         file_path=output_path
     )
     

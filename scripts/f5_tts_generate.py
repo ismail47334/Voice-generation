@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 import soundfile as sf
 from pathlib import Path
 
@@ -21,7 +22,6 @@ def read_text_file(file_path, default_text=""):
                 text = f.read().strip()
                 if text:
                     print(f"✅ Read {file_path}: {len(text)} chars")
-                    print(f"Preview: {text[:100]}...")
                     return text
         print(f"⚠️ {file_path} not found, using default")
         return default_text
@@ -34,54 +34,117 @@ def generate_f5():
     gen_text = read_text_file(VOICE_TEXT_FILE, "")
     
     if not gen_text:
-        print(f"❌ {VOICE_TEXT_FILE} is empty! Add Bengali text")
+        print(f"❌ {VOICE_TEXT_FILE} is empty!")
         sys.exit(1)
     
     print(f"\n=== F5-TTS Config ===")
     print(f"Ref Audio: {REF_AUDIO}")
-    print(f"Ref Text: {len(ref_text)} chars")
-    print(f"Gen Text: {len(gen_text)} chars")
+    print(f"Gen Text length: {len(gen_text)} chars")
     
     if not os.path.exists(REF_AUDIO):
         print(f"❌ {REF_AUDIO} not found")
-        print("Files in ref_audio:")
-        if os.path.exists("ref_audio"):
-            for f in os.listdir("ref_audio"):
-                print(f" - {f}")
         sys.exit(1)
-    
-    print("\nLoading F5-TTS model...")
-    
+
+    # Method 1: Try CLI (most stable for 1.1.6)
+    print("\nTrying F5-TTS CLI method...")
+    try:
+        # Escape quotes in texts
+        cmd = [
+            "f5-tts_infer-cli",
+            "--model", "F5-TTS_v1_Base",
+            "--ref_audio", REF_AUDIO,
+            "--ref_text", ref_text,
+            "--gen_text", gen_text,
+            "--output_dir", OUTPUT_DIR,
+            "--output_file", "output_voice_f5.wav",
+            "--remove_silence",
+            "--nfe_step", "32",
+        ]
+        print(f"Running: {' '.join(cmd[:5])} ...")
+        result = subprocess.run(cmd, capture_output=False, text=True, timeout=600)
+        
+        if os.path.exists(OUTPUT_FILE):
+            print(f"\n✅ SUCCESS via CLI: {OUTPUT_FILE}")
+            size_mb = os.path.getsize(OUTPUT_FILE) / 1024 / 1024
+            print(f"Size: {size_mb:.2f} MB")
+            return
+        
+        print("CLI didn't produce file, trying API v2...")
+    except Exception as e:
+        print(f"CLI failed: {e}")
+        import traceback
+        traceback.print_exc()
+
+    # Method 2: API v2 for 1.1.6
+    print("\nTrying F5-TTS API v2...")
     try:
         from f5_tts.api import F5TTS
         
-        f5 = F5TTS.from_pretrained("F5-TTS_v1_Base", vocoder_name="vocos", device="cpu")
+        # In 1.1.6, it's F5TTS() not from_pretrained
+        f5 = F5TTS(
+            model_type="F5-TTS_v1_Base",
+            ckpt_file="",  # will auto download
+            vocab_file="",
+            ode_method="euler",
+            use_ema=True,
+            device="cpu"
+        )
         
-        print("Generating voice...")
         wav, sr, spec = f5.infer(
             ref_file=REF_AUDIO,
             ref_text=ref_text,
             gen_text=gen_text,
-            file_wave=OUTPUT_FILE,
-            cross_fade_duration=0.15,
-            nfe_step=32,  # Quality: 32 good, 16 fast
-            speed=1.0,
-            remove_silence=True,
         )
         
-        print(f"\n✅ SUCCESS: {OUTPUT_FILE}")
+        # Save
+        sf.write(OUTPUT_FILE, wav, sr)
+        print(f"\n✅ SUCCESS via API v2: {OUTPUT_FILE}")
         
-        if os.path.exists(OUTPUT_FILE):
-            size_mb = os.path.getsize(OUTPUT_FILE) / 1024 / 1024
-            print(f"Size: {size_mb:.2f} MB")
-            print(f"Sample Rate: {sr} Hz")
-            print(f"Duration: {len(wav)/sr:.2f} sec")
-            
     except Exception as e:
-        print(f"\n❌ Generation failed: {e}")
+        print(f"\n❌ API v2 failed: {e}")
         import traceback
         traceback.print_exc()
-        sys.exit(1)
+        
+        # Method 3: Legacy low-level API
+        print("\nTrying Legacy Low-level API...")
+        try:
+            from f5_tts.model import DiT
+            from f5_tts.infer.utils_infer import (
+                load_vocoder,
+                load_model,
+                preprocess_ref_audio_text,
+                infer_process
+            )
+            
+            vocoder = load_vocoder(vocoder_name="vocos", is_local=False, device="cpu")
+            model = load_model(
+                model_cls=DiT,
+                model_cfg=dict(dim=1024, depth=22, heads=16, ff_mult=2, text_dim=512, conv_layers=4),
+                ckpt_path="hf://SWivid/F5-TTS/F5-TTS_v1_Base/model_1200000.safetensors",
+                device="cpu"
+            )
+            
+            ref_audio_proc, ref_text_proc = preprocess_ref_audio_text(REF_AUDIO, ref_text)
+            
+            final_wave, final_sample_rate, combined_spectrogram = infer_process(
+                ref_audio_proc,
+                ref_text_proc,
+                gen_text,
+                model,
+                vocoder,
+                cross_fade_duration=0.15,
+                nfe_step=32,
+                speed=1.0,
+                device="cpu"
+            )
+            
+            sf.write(OUTPUT_FILE, final_wave, final_sample_rate)
+            print(f"\n✅ SUCCESS via Legacy API: {OUTPUT_FILE}")
+            
+        except Exception as e2:
+            print(f"\n❌ All methods failed: {e2}")
+            traceback.print_exc()
+            sys.exit(1)
 
 if __name__ == "__main__":
     generate_f5()

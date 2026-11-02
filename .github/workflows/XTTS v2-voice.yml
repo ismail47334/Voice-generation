@@ -24,7 +24,8 @@ jobs:
       - name: Install Python Dependencies
         run: |
           pip install --upgrade pip
-          pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          # PyTorch কে পুরানো ও স্টেবল সংস্করণে সেট করা যাতে torchcodec এরর না আসে
+          pip install torch==2.4.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cpu
           pip install coqui-tts soundfile
           pip install "transformers>=4.49,<5"
 

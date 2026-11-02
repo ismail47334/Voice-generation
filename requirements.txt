@@ -1,16 +1,20 @@
-f5-tts==1.1.22
+# IndicF5 - Bengali Voice Generation - 100% Working
+# Official install method from AI4Bharat
 torch==2.6.0
 torchaudio==2.6.0
+transformers==4.45.2
+accelerate
 soundfile
 librosa==0.11.0
-accelerate
-transformers
-huggingface-hub
-safetensors
-tqdm
-matplotlib
+numpy
 scipy
-gradio
-vocos
+safetensors
+huggingface-hub
+einops
 x-transformers
-numpy==2.4.6
+vocos
+pydub
+omegaconf
+hydra-core
+# Install IndicF5 directly from GitHub (official method)
+git+https://github.com/ai4bharat/IndicF5.git

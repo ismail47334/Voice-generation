@@ -37,30 +37,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install sherpa-onnx soundfile numpy huggingface_hub
 
-      - name: Download Bengali Piper Model (Lightweight ~50MB)
+      - name: Download Bengali Piper Model
         run: |
           if [ ! -f "vits-piper-bn/bn_BD_nabanita_medium.onnx" ]; then
-            echo "Downloading Bengali Piper model..."
-            wget -q https://github.[STRIPPED 65 bytes].tar.bz2 || true
+            echo "Downloading model..."
+            wget -q https://github.[STRIPPED 65 bytes].tar.bz2
             if [ -f "vits-piper-bn.tar.bz2" ]; then
               tar xvf vits-piper-bn.tar.bz2
               rm vits-piper-bn.tar.bz2
             else
-              echo "Trying HF download..."
-              python << 'PY'
-              from huggingface_hub import snapshot_download
-              import os
-              print("Downloading from HF: csukuangfj/vits-piper-bn")
-              snapshot_download(repo_id="csukuangfj/vits-piper-bn", local_dir="vits-piper-bn", local_dir_use_symlinks=False)
-              print(os.listdir("vits-piper-bn"))
-              PY
+              echo "Release failed, downloading from HuggingFace..."
+              python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='csukuangfj/vits-piper-bn', local_dir='vits-piper-bn', local_dir_use_symlinks=False)"
             fi
           else
             echo "Model cache hit!"
           fi
           ls -lh vits-piper-bn/
 
-      - name: Generate Bengali voice from voice_text.txt
+      - name: Generate Bengali voice
         run: |
           python scripts/sherpa_tts.py
 

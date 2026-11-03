@@ -46,22 +46,21 @@ jobs:
               tar xvf vits-piper-bn.tar.bz2
               rm vits-piper-bn.tar.bz2
             else
-              echo "Release download failed, trying HF..."
-              python -c "
-from huggingface_hub import snapshot_download
-import os
-print('Downloading from HF: csukuangfj/vits-piper-bn')
-snapshot_download(repo_id='csukuangfj/vits-piper-bn', local_dir='vits-piper-bn', local_dir_use_symlinks=False)
-print('Downloaded')
-print(os.listdir('vits-piper-bn'))
-"
+              echo "Trying HF download..."
+              python << 'PY'
+              from huggingface_hub import snapshot_download
+              import os
+              print("Downloading from HF: csukuangfj/vits-piper-bn")
+              snapshot_download(repo_id="csukuangfj/vits-piper-bn", local_dir="vits-piper-bn", local_dir_use_symlinks=False)
+              print(os.listdir("vits-piper-bn"))
+              PY
             fi
           else
             echo "Model cache hit!"
           fi
-          ls -lh vits-piper-bn/ || true
+          ls -lh vits-piper-bn/
 
-      - name: Generate Bengali voice from voice_text.txt (Full Text -> Single Audio)
+      - name: Generate Bengali voice from voice_text.txt
         run: |
           python scripts/sherpa_tts.py
 

@@ -22,33 +22,36 @@ jobs:
       - name: Install system deps
         run: sudo apt-get update && sudo apt-get install -y ffmpeg libsndfile1 espeak-ng
 
-      - name: Cache Sherpa model
+      - name: Cache model
         uses: actions/cache@v4
         with:
           path: vits-piper-bn
-          key: sherpa-bn-piper-v2
+          key: piper-bn-nabanita-v2
 
       - name: Install Python deps
         run: |
           pip install --upgrade pip
-          pip install sherpa-onnx soundfile numpy huggingface_hub
+          pip install piper-tts soundfile numpy
 
-      - name: Download Bengali Model from HF (Fast)
+      - name: Download Public Bengali Model (No Token Needed)
         run: |
+          mkdir -p vits-piper-bn
           if [ ! -f "vits-piper-bn/bn_BD_nabanita_medium.onnx" ]; then
-            echo "Downloading..."
-            python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='csukuangfj/vits-piper-bn', local_dir='vits-piper-bn', local_dir_use_symlinks=False)"
-          else
-            echo "Cache hit!"
+            echo "Downloading public Piper BN model..."
+            cd vits-piper-bn
+            wget -q https://huggingface.[STRIPPED 83 bytes].onnx -O bn_BD_nabanita_medium.onnx
+            wget -q https://huggingface.[STRIPPED 83 bytes].onnx.json -O bn_BD_nabanita_medium.onnx.json
+            cd ..
           fi
           ls -lh vits-piper-bn/
 
-      - name: Generate voice
-        run: python scripts/sherpa_tts.py
+      - name: Generate voice from voice_text.txt
+        run: |
+          python scripts/sherpa_tts.py
 
-      - name: Upload audio
+      - name: Upload Final Audio
         uses: actions/upload-artifact@v4
         with:
-          name: bangla-voice-sherpa-final
+          name: bangla-voice-final
           path: output/
           retention-days: 7

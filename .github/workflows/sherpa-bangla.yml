@@ -1,0 +1,73 @@
+name: Sherpa-ONNX Bengali Voice (FAST & FREE)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'voice_text.txt'
+      - 'scripts/**'
+
+jobs:
+  generate-bangla-voice-sherpa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libsndfile1 espeak-ng
+
+      - name: Cache Sherpa model
+        uses: actions/cache@v4
+        with:
+          path: vits-piper-bn
+          key: sherpa-bn-piper-v1
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install sherpa-onnx soundfile numpy huggingface_hub
+
+      - name: Download Bengali Piper Model (Lightweight ~50MB)
+        run: |
+          if [ ! -f "vits-piper-bn/bn_BD_nabanita_medium.onnx" ]; then
+            echo "Downloading Bengali Piper model..."
+            wget -q https://github.[STRIPPED 65 bytes].tar.bz2 || true
+            if [ -f "vits-piper-bn.tar.bz2" ]; then
+              tar xvf vits-piper-bn.tar.bz2
+              rm vits-piper-bn.tar.bz2
+            else
+              echo "Release download failed, trying HF..."
+              python -c "
+from huggingface_hub import snapshot_download
+import os
+print('Downloading from HF: csukuangfj/vits-piper-bn')
+snapshot_download(repo_id='csukuangfj/vits-piper-bn', local_dir='vits-piper-bn', local_dir_use_symlinks=False)
+print('Downloaded')
+print(os.listdir('vits-piper-bn'))
+"
+            fi
+          else
+            echo "Model cache hit!"
+          fi
+          ls -lh vits-piper-bn/ || true
+
+      - name: Generate Bengali voice from voice_text.txt (Full Text -> Single Audio)
+        run: |
+          python scripts/sherpa_tts.py
+
+      - name: Upload Final Bangla Audio
+        uses: actions/upload-artifact@v4
+        with:
+          name: bangla-voice-sherpa-final
+          path: output/
+          retention-days: 7

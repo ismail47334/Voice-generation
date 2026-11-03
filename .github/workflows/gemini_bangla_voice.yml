@@ -22,8 +22,14 @@ jobs:
     - name: Install Google GenAI Library
       run: |
         python -m pip install --upgrade pip
-        pip install google-genai
+        pip install -U google-genai
+        pip install -U pydantic
 
+    - name: Check files
+      run: |
+        ls -R
+        echo "--- voice_text.txt content preview ---"
+        head -n 20 voice_text.txt || head -n 20 ../voice_text.txt || echo "file not found in root"
 
     - name: Run Voice Generation Script
       env:
@@ -36,3 +42,4 @@ jobs:
       with:
         name: voice-output-folder
         path: output/
+        if-no-files-found: error

@@ -29,6 +29,8 @@ jobs:
           pip install gradio_client requests
 
       - name: Generate voice via OmniVoice API (k2-fsa/OmniVoice)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           python scripts/omnivoice_clone.py
 

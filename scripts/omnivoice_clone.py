@@ -1,5 +1,6 @@
 import os, shutil, wave, re
 from gradio_client import Client, handle_file
+from huggingface_hub import login
 
 REF_AUDIO = "ref_audio/sample.wav"
 REF_TEXT_FILE = "ref_text.txt"
@@ -27,7 +28,6 @@ def merge_wav(files, out_path):
 ref_text = read_text(REF_TEXT_FILE)
 gen_text = read_text(VOICE_TEXT_FILE)
 
-# Chunking
 sentences = re.split(r'[।\n]+', gen_text)
 chunks, cur = [], ""
 for s in sentences:
@@ -42,13 +42,12 @@ if cur: chunks.append(cur.strip())
 
 print(f"Split into {len(chunks)} chunks")
 
-# ✅ TOKEN WITH CLIENT - More quota
 hf_token = os.getenv("HF_TOKEN")
 if hf_token:
     print(f"Using HF_TOKEN: {hf_token[:8]}...")
-    client = Client("k2-fsa/OmniVoice", hf_token=hf_token)
-else:
-    client = Client("k2-fsa/OmniVoice")
+    login(token=hf_token)
+
+client = Client("k2-fsa/OmniVoice")
 print("✅ Connected!")
 
 temp_files = []

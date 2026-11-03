@@ -1,4 +1,4 @@
-import os, sys, shutil, wave, re
+import os, shutil, wave, re
 from gradio_client import Client, handle_file
 
 REF_AUDIO = "ref_audio/sample.wav"
@@ -16,27 +16,20 @@ def read_text(p):
         return f.read().strip()
 
 def merge_wav(files, out_path):
-    if not files: return
-    with wave.open(files[0], 'rb') as w:
-        params = w.getparams()
+    with wave.open(files[0], 'rb') as w: params = w.getparams()
     frames = []
     for f in files:
-        with wave.open(f, 'rb') as w:
-            frames.append(w.readframes(w.getnframes()))
+        with wave.open(f, 'rb') as w: frames.append(w.readframes(w.getnframes()))
     with wave.open(out_path, 'wb') as out:
         out.setparams(params)
-        for fr in frames:
-            out.writeframes(fr)
+        for fr in frames: out.writeframes(fr)
 
 ref_text = read_text(REF_TEXT_FILE)
 gen_text = read_text(VOICE_TEXT_FILE)
 
-print(f"Full text: {len(gen_text)} chars")
-
-# Split into ~150 char chunks by sentence
+# Chunking
 sentences = re.split(r'[।\n]+', gen_text)
-chunks = []
-cur = ""
+chunks, cur = [], ""
 for s in sentences:
     s=s.strip()
     if not s: continue
@@ -49,15 +42,20 @@ if cur: chunks.append(cur.strip())
 
 print(f"Split into {len(chunks)} chunks")
 
-client = Client("k2-fsa/OmniVoice")
+# ✅ TOKEN WITH CLIENT - More quota
+hf_token = os.getenv("HF_TOKEN")
+if hf_token:
+    print(f"Using HF_TOKEN: {hf_token[:8]}...")
+    client = Client("k2-fsa/OmniVoice", hf_token=hf_token)
+else:
+    client = Client("k2-fsa/OmniVoice")
 print("✅ Connected!")
 
 temp_files = []
 for i, chunk in enumerate(chunks):
-    print(f"\n[{i+1}/{len(chunks)}] Generating: {chunk[:50]}...")
+    print(f"\n[{i+1}/{len(chunks)}] {chunk[:50]}...")
     result = client.predict(
-        text=chunk,
-        lang="Auto",
+        text=chunk, lang="Auto",
         ref_aud=handle_file(REF_AUDIO),
         ref_text=ref_text,
         instruct="male, indian accent",
@@ -70,11 +68,6 @@ for i, chunk in enumerate(chunks):
     temp_files.append(temp_path)
     print(f"✅ Chunk {i+1} done")
 
-print(f"\nMerging {len(temp_files)} parts...")
 merge_wav(temp_files, OUTPUT_FILE)
 shutil.rmtree(TEMP_DIR, ignore_errors=True)
-
 print(f"\n✅✅✅ SUCCESS: {OUTPUT_FILE}")
-with wave.open(OUTPUT_FILE, 'rb') as w:
-    dur = w.getnframes() / w.getframerate()
-    print(f"Duration: {dur:.2f}s - Size: {os.path.getsize(OUTPUT_FILE)/1024/1024:.2f} MB")

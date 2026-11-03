@@ -1,6 +1,6 @@
 import os
 from google import genai
-from google.genai import types  # সঠিক টাইপ অবজেক্ট ব্যবহারের জন্য এটি প্রয়োজন
+from google.genai import types
 
 # GitHub Secrets থেকে API Key নেওয়া
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -23,28 +23,28 @@ if not text_to_speak:
 
 print("ভয়েস ডিজাইন এবং কনফিগার করা হচ্ছে...")
 
-# নতুন SDK-এর নিয়ম অনুযায়ী SpeechConfig অবজেক্ট তৈরি করা
-voice_config = types.SpeechConfig(
+# Pydantic এরর এড়াতে নতুন SDK-এর সঠিক ফরম্যাটে ভয়েস প্রম্পট সেট করা
+speech_config = types.SpeechConfig(
     voice_config=types.VoiceConfig(
-        prebuilt_voice_config=types.PrebuiltVoiceConfig(
-            voice_design_prompt=(
+        prebuilt_voice_config={
+            "voice_design_prompt": (
                 "A Bangladeshi young male voice, speaking with a natural Bangladeshi accent. "
                 "The tone must be energetic, highly excited, thrilling, and fast-paced, "
                 "perfect for a cinema or movie explanation video (movie recap style)."
             )
-        )
+        }
     )
 )
 
 print("ডিজাইন করা ভয়েসে বাংলা অডিও জেনারেট হচ্ছে...")
 
-# GenerateContentConfig অবজেক্টের ভেতরে speech_config পাস করা
+# জেমিনি ৩.৮ মডেল কল করে অডিও তৈরি করা
 response = client.models.generate_content(
     model="gemini-3.8-flash-tts",
     contents=text_to_speak,
     config=types.GenerateContentConfig(
         response_mime_type="audio/mp3",
-        speech_config=voice_config
+        speech_config=speech_config
     )
 )
 
